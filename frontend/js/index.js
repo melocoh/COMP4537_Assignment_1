@@ -1,57 +1,16 @@
+// DOM Elements
 const adminSection = document.getElementById('adminSection');
 const studentSection = document.getElementById('studentSection');
-const btnCreate = document.getElementById('btnCreate');
+const createButton = document.getElementById('createButton');
 
-window.onload = () => {
-    const xhttp = new XMLHttpRequest();
-    xhttp.open(
-        'GET',
-        'https://melody-oh-server.herokuapp.com/admin/quizzes',
-        true
-    );
-    xhttp.send();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            const quizzes = JSON.parse(this.responseText);
-            console.log(quizzes);
+// Server path
+const PATH = "Removed";
 
-            // if there are no quizzes
-            if (quizzes.length === 0) {
-                adminSection.innerHTML += '<h3>No quizzes<h3>';
-            }
+// Question counter
+let questionNum = 1;
 
-            let i = 1;
-
-            // for each quiz in the quizzes object
-            for (let quiz of quizzes) {
-
-                // Admin card elements
-                const adminCard = document.createElement('div');
-                const adminCardBody = document.createElement('div');
-                adminCardBody.innerHTML = `<a href="./admin.html?id=${quiz.quizId}&quizName=${quiz.name}"><h5 class="card-title">Quiz ${i} : ${quiz.name}</h5></a>`;
-                adminSection.appendChild(adminCard);
-                adminCard.appendChild(adminCardBody);
-                adminCard.classList.add('card');
-                adminCard.classList.add('col-10');
-                adminCard.classList.add('mt-1');
-                adminCardBody.classList.add('card-body');
-
-                // Student card elements
-                const studentCard = document.createElement('div');
-                const studentCardBody = document.createElement('div');
-                studentCardBody.innerHTML = `<a href="./student.html?id=${quiz.quizId}&quizName=${quiz.name}"><h5 class="card-title">Quiz ${i++} : ${quiz.name}</h5></a>`;
-                studentSection.appendChild(studentCard);
-                studentCard.appendChild(studentCardBody);
-                studentCard.classList.add('card');
-                studentCard.classList.add('col-10');
-                studentCard.classList.add('mt-1');
-                studentCardBody.classList.add('card-body');
-            }
-        }
-    };
-};
-
-btnCreate.addEventListener('click', () => {
+// Create button for administrators
+createButton.addEventListener('click', () => {
 
     const input = document.getElementById('quizName');
     
@@ -60,7 +19,7 @@ btnCreate.addEventListener('click', () => {
         const xhttp = new XMLHttpRequest();
         xhttp.open(
             'POST',
-            'https://melody-oh-server.herokuapp.com/quizzes',
+            PATH + '/admin/quizzes',
             true
         );
         xhttp.setRequestHeader('Content-Type', 'application/json');
@@ -78,3 +37,57 @@ btnCreate.addEventListener('click', () => {
         alert('Invalid Quiz Name');
     }
 });
+
+// GET method on load
+window.onload = () => {
+    const xhttp = new XMLHttpRequest();
+    xhttp.open(
+        'GET',
+        PATH + '/admin/quizzes',
+        true
+    );
+    xhttp.send();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            const quizzes = JSON.parse(this.responseText);
+            console.log(quizzes);
+
+            // if there are no quizzes
+            if (quizzes.length === 0) {
+                adminSection.innerHTML += '<h3>No quizzes available. Make a new one. <h3>';
+            }
+
+            generateQuizzes(quizzes);
+        }
+    };
+};
+
+// Generates quizzes for admin and student
+function generateQuizzes(quizzes){
+
+    // for each quiz in the quizzes object
+    for (let quiz of quizzes) {
+
+        // Admin DOM elements
+        const adminQuestionDiv = document.createElement('div');
+        const adminQuestionBody = document.createElement('div');
+        adminQuestionBody.innerHTML = `<a href="./admin.html?id=${quiz.quizId}&quizName=${quiz.name}"><h5 class="card-title">Quiz ${questionNum} : ${quiz.name}</h5></a>`;
+        adminSection.appendChild(adminQuestionDiv);
+        adminQuestionDiv.appendChild(adminQuestionBody);
+        adminQuestionDiv.classList.add('card');
+        adminQuestionDiv.classList.add('col-10');
+        adminQuestionDiv.classList.add('mt-1');
+        adminQuestionBody.classList.add('card-body');
+
+        // Student DOM elements
+        const studentQuestionDiv = document.createElement('div');
+        const studentQuestionBody = document.createElement('div');
+        studentQuestionBody.innerHTML = `<a href="./student.html?id=${quiz.quizId}&quizName=${quiz.name}"><h5 class="card-title">Quiz ${questionNum++} : ${quiz.name}</h5></a>`;
+        studentSection.appendChild(studentQuestionDiv);
+        studentQuestionDiv.appendChild(studentQuestionBody);
+        studentQuestionDiv.classList.add('card');
+        studentQuestionDiv.classList.add('col-10');
+        studentQuestionDiv.classList.add('mt-1');
+        studentQuestionBody.classList.add('card-body');
+    }
+}

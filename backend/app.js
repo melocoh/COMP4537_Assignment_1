@@ -3,6 +3,7 @@
 const {
     query
 } = require('express');
+
 // Express dependencies
 const express = require('express');
 const app = express();
@@ -14,10 +15,10 @@ const PORT = process.env.PORT || 9999;
 
 // DB Credentials
 const con = mysql.createPool({
-    host: "us-cdbr-east-03.cleardb.com",
-    user: "bdf2f88fb39ca9",
-    password: "79001dcf",
-    database: "heroku_0f80536d3e66f68",
+    host: "Removed",
+    user: "Removed",
+    password: "Removed",
+    database: "Removed",
 });
 
 // Request Credentials
@@ -81,21 +82,21 @@ app.post('/admin/questions', (req, res) => {
             res.send(err);
             throw err;
         }
-        // res.json(result);
 
         totalQuery['question'] = result;
         new Promise((resolve, reject) => {
             totalQuery['choices'] = [];
-            let choicesQuery = `insert into Choices (questionId, choiceBody, isCorrect) values("${result.insertId}","${choices[0].choiceBody}", ${choices[0].isCorrect ? 'TRUE' : 'FALSE'}),`;
+            let choicesQuery = `insert into Choices (questionId, choiceBody, isCorrect) values("${result.insertId}","${choices[0].choiceBody}", ${choices[0].isCorrect ? 'TRUE' : 'FALSE'})`;
             for (let i = 1; i < choices.length; i++) {
-                choicesQuery += `("${result.insertId}","${choices[i].choiceBody}", ${choices[i].isCorrect ? 'TRUE' : 'FALSE'})`;
 
-                if (i == choices.length - 1) {
-                    choicesQuery += ';'
-                } else {
-                    choicesQuery += ','
+                if (choices[i].choiceBody == '') {
+                    continue;
                 }
+
+                choicesQuery += `,("${result.insertId}","${choices[i].choiceBody}", ${choices[i].isCorrect ? 'TRUE' : 'FALSE'})`;
             }
+
+            // commits choices in Choices table
             con.query(choicesQuery, (error, result2) => {
                 if (error) {
                     res.send(error);
@@ -113,6 +114,7 @@ app.post('/admin/questions', (req, res) => {
     });
 });
 
+// 
 app.get('/admin/quizzes/questions/:id', (req, res) => {
 
     let quizId = req.params.id;
@@ -130,7 +132,7 @@ app.get('/admin/quizzes/questions/:id', (req, res) => {
 });
 
 
-// [GET] Selects all queries Question Table from Admin
+// [GET] Selects all queries in Question Table from Admin
 // where quiz matches the parameter
 app.get('/admin/quizzes/questions/:id', (req, res) => {
 
@@ -149,6 +151,8 @@ app.get('/admin/quizzes/questions/:id', (req, res) => {
     });
 });
 
+// [GET] Selects all choices from Question Table from Admin
+// where question matches the parameter
 app.get('/admin/quizzes/questions/:id/choices', (req, res) => {
 
     let quizId = req.params.id;
@@ -158,7 +162,7 @@ app.get('/admin/quizzes/questions/:id/choices', (req, res) => {
         `join Choices c on qu.questionId=c.questionId ` +
         `where q.quizId=${quizId} order by qu.questionId`;
 
-        console.log('Running query');
+    console.log('Running query');
     con.query(query, (err, result) => {
         if (err) {
             res.send(err);
@@ -201,7 +205,7 @@ app.put('/admin/questions', (req, res) => {
 
         // [inserting new choice] 
         // if choiceId is null, insert new row 
-        if (choiceId == null) {
+        if (choiceId == null || choiceId == '') {
             choiceQueries = `insert into Choices (questionId, choiceBody, isCorrect) values("${questionId}","${choiceBody}", "${isCorrect ? 'TRUE' : 'FALSE'}");`;
 
             // [deleting a choice] 

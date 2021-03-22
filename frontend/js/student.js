@@ -1,98 +1,145 @@
+// DOM Elements
 const container = document.getElementsByClassName('container')[0];
-const answerKey = [];
-const btnSubmit = document.getElementById('btnSubmit');
+container.classList.add("text-center");
+const submitButton = document.getElementById('submitButton');
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const quizName = urlParams.get('quizName');
+const title = document.createElement('h1');
+title.innerHTML = 'Quiz: ' + quizName;
+document.getElementsByClassName('container')[0].appendChild(title);
 
-// windows load
-window.onload = function () {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const quizName = urlParams.get('quizName');
-    const header = document.createElement('h1');
-    header.innerHTML = quizName;
-    document.getElementsByClassName('container')[0].appendChild(header);
+// Server path
+const PATH = "Removed";
 
-    const xhttp = new XMLHttpRequest();
-    xhttp.open(
-        'GET',
-        `https://melody-oh-server.herokuapp.com/student/quizzes/questions/${urlParams.get('id')}`,
-        true
-    );
-    xhttp.send();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            const questions = JSON.parse(this.responseText);
-            let prevQuestionId = 0;
-            let counter = 1;
-            if (questions.length === 0) {
-                document.getElementsByClassName('container')[0].innerHTML +=
-                    '<h3>No question</h3>';
-            }
+// List of answers
+const answerList = [];
 
-            console.log(questions);
-            for (let question of questions) {
+// Question counter
+let questionNum = 1;
 
-                // if the questionId is unique
-                if (prevQuestionId != question.questionId) {
-                    const newQuestion = document.createElement('div');
-                    const questionNumber = document.createElement('h3');
-                    questionNumber.innerHTML = 'Q.' + counter + ' ' + question.questionBody;
+// Initializes previous question tracker
+let prevQuestion = 0;
 
-                    newQuestion.classList.add('card');
-                    newQuestion.classList.add('p-5');
-                    container.appendChild(newQuestion);
-                    newQuestion.appendChild(questionNumber);
+// Keeps track of student score
+let correctScore = 0;
 
-                    prevQuestionId = question.questionId;
-                    counter++;
-                }
+// Submit button for students
+submitButton.addEventListener('click', () => {
 
-                const forms = document.getElementsByClassName('card');
-                const form = forms[forms.length - 1];
-                const newFormChecker = document.createElement('div');
-                const checker = document.createElement('input');
-                const label = document.createElement('label');
+    const questionDiv = document.getElementsByClassName('card');
+    const questionTotal = questionDiv.length;
 
-                newFormChecker.classList.add('form-check');
-                checker.id = question.choiceId;
-                checker.setAttribute('type', 'radio');
-                checker.setAttribute('name', `${question.questionId}`);
-                checker.setAttribute('value', `${question.choiceId}`);
-                checker.classList.add('form-check-input');
-                label.classList.add('form-check-label');
+    // Checks every questions
+    for (let question of questionDiv) {
+        const answers = question.getElementsByClassName('form-check-input');
 
-                label.innerHTML = question.choiceBody;
-                form.appendChild(newFormChecker);
-                newFormChecker.appendChild(checker);
-                newFormChecker.appendChild(label);
-
-                if (question.isCorrect == 1) {
-                    answerKey.push(question.choiceId);
-                }
-            }
-            console.log(answerKey);
-        }
-    };
-};
-
-// Submit button
-btnSubmit.addEventListener('click', () => {
-    const cards = document.getElementsByClassName('card');
-    const total = cards.length;
-    let right = 0;
-    for (let card of cards) {
-        const answers = card.getElementsByClassName('form-check-input');
+        // Finds all the answers
         for (let answer of answers) {
+
+            // If the correct answer is ticked
             if (answer.checked) {
-                if (answerKey.includes(parseInt(answer.id))) {
-                    right++;
+
+                // Increment score
+                if (answerList.includes(parseInt(answer.id))) {
+                    correctScore++;
                 }
             }
         }
     }
-    alert(`Your grade is ${Math.round((right / total) * 10000) / 100}%`);
+
+    // Sends result to the user
+    alert(`Your score is ${Math.round((correctScore / questionTotal) * 10000) / 100}%`);
 });
 
-// Back button
+// Back button that takes you to index
 document.getElementById('back').addEventListener('click', () => {
-    window.history.back();
+    location.href = 'index.html';
 });
+
+// GET method on load
+window.onload = () => {
+    const xhttp = new XMLHttpRequest();
+    xhttp.open(
+        'GET',
+        PATH + `/student/quizzes/questions/${urlParams.get('id')}`,
+        true
+    );
+    xhttp.send();
+    xhttp.onreadystatechange = function () {
+
+        // On success
+        if (this.readyState == 4 && this.status == 200) {
+
+            // parses all the questions
+            const quizQuestions = JSON.parse(this.responseText);
+
+            generateQuestions(quizQuestions);
+        }
+    };
+};
+
+// Generates the questions for the specific quiz
+function generateQuestions(quizQuestions) {
+
+    // If no questions are in the database, displays message
+    if (quizQuestions.length === 0) {
+        document.getElementsByClassName('container')[0].innerHTML +=
+            '<h3>No questions available for this quiz</h3>';
+    }
+
+    // For every questions in the database
+    for (let question of quizQuestions) {
+
+        // If the questionId is unique
+        if (prevQuestion != question.questionId) {
+
+            // Increments the question number
+            questionNum++;
+
+            // Tracks the previous questions
+            prevQuestion = question.questionId;
+
+            // Sets DOM elements for question div and content
+            const questionDiv = document.createElement('div');
+            const questionTitle = document.createElement('h3');
+            questionTitle.innerHTML = 'Question ' + questionNum + ': <br>' + question.questionBody;
+
+            // Sets bootstrap styling elements
+            questionDiv.classList.add('card');
+            questionDiv.classList.add('m-3');
+            questionDiv.classList.add('p-5');
+            container.appendChild(questionDiv);
+            questionDiv.appendChild(questionTitle);
+        }
+
+        // Sets DOM elements for question div and content
+        const choiceDiv = document.getElementsByClassName('card');
+        const form = choiceDiv[choiceDiv.length - 1];
+        const choiceInputForm = document.createElement('div');
+        const radioInput = document.createElement('input');
+        const choiceText = document.createElement('label');
+
+        // Sets bootstrap styling elements
+        choiceInputForm.classList.add('form-check');
+        radioInput.setAttribute('type', 'radio');
+        radioInput.setAttribute('name', `${question.questionId}`);
+        radioInput.setAttribute('value', `${question.choiceId}`);
+        radioInput.classList.add('form-check-input');
+        choiceText.classList.add('form-check-label');
+
+        // Sets choices from db
+        radioInput.id = question.choiceId;
+        choiceText.innerHTML = question.choiceBody;
+
+        // Appends DOM elements
+        form.appendChild(choiceInputForm);
+        choiceInputForm.appendChild(radioInput);
+        choiceInputForm.appendChild(choiceText);
+
+        // Pushes correct choices are pushed into the answer list
+        if (question.isCorrect == 1) {
+            answerList.push(question.choiceId);
+        }
+    }
+}
